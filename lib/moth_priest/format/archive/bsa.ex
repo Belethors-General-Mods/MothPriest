@@ -5,8 +5,9 @@ defmodule MothPriest.Format.Archive.BSA do
 
   def parse(path) do
     Logger.debug(path)
-    data = File.read!(path)
-    Logger.debug(inspect(parse_header(data)))
+    file = File.open!(path)
+    bytes = IO.binread(file, 8)
+    Logger.debug(inspect(parse_header(bytes)))
   end
 
   @spec parse_header(<<_::_*8>>) :: {module(), atom() | nil}
@@ -14,12 +15,12 @@ defmodule MothPriest.Format.Archive.BSA do
     Logger.debug(inspect data)
     type =
       case data do
-        <<"BSA\x00", "\x00\x00\x00\x69", _>> -> {TES5BSA, :se}
-        <<"BSA\x00", "\x00\x00\x00\x68", _>> -> {TES5BSA, nil}
-        <<"BSA\x00", "\x00\x00\x00\x67", _>> -> {TES4BSA, nil}
-        <<"\x00\x01\x00\x00", _>> -> {TES3BSA, nil}
-        <<_::8*2, "\x01\x00", _>> -> {TES2BSA, :ascii}
-        <<_::8*2, "\x02\x00", _>> -> {TES2BSA, :recordid}
+        <<"BSA\x00", "\x69\x00\x00\x00">> -> {TES5BSA, :se}
+        <<"BSA\x00", "\x68\x00\x00\x00">> -> {TES5BSA, nil}
+        <<"BSA\x00", "\x67\x00\x00\x00">> -> {TES4BSA, nil}
+        <<"\x00\x01\x00\x00", _::8*4>> -> {TES3BSA, nil}
+        <<_::8*2, "\x01\x00", _::8*4>> -> {TES2BSA, :ascii}
+        <<_::8*2, "\x02\x00", _::8*4>> -> {TES2BSA, :recordid}
         _ -> raise "File is not a BSA"
       end
   end
